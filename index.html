@@ -1,0 +1,1435 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Sorting Algorithm Visualizations</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        .array-element {
+            transition: all 0.5s cubic-bezier(0.4, 0, 0.2, 1);
+            transform-style: preserve-3d;
+            perspective: 1000px;
+        }
+        .arrow {
+            transition: all 0.3s ease;
+            position: relative;
+        }
+        .arrow::before {
+            content: '';
+            position: absolute;
+            right: -8px;
+            top: 50%;
+            transform: translateY(-50%);
+            width: 0;
+            height: 0;
+            border-left: 8px solid #4B5563;
+            border-top: 4px solid transparent;
+            border-bottom: 4px solid transparent;
+        }
+        .highlight {
+            background: linear-gradient(135deg, #fbbf24, #f59e0b);
+            box-shadow: 0 0 20px rgba(251, 191, 36, 0.6);
+            animation: pulse 1.5s infinite;
+            border: 2px solid #f59e0b;
+        }
+        .sorted {
+            background: linear-gradient(135deg, #10b981, #059669);
+            box-shadow: 0 0 20px rgba(16, 185, 129, 0.6);
+            animation: sortedGlow 2s infinite;
+            border: 2px solid #059669;
+        }
+        .comparing {
+            background: linear-gradient(135deg, #60a5fa, #3b82f6);
+            box-shadow: 0 0 20px rgba(96, 165, 250, 0.6);
+            animation: compareJump 1.5s ease-in-out forwards;
+            transform: translateY(-30px);
+            border: 2px solid #3b82f6;
+        }
+        .data-circle {
+            background: linear-gradient(135deg, #3b82f6, #2563eb);
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+            transition: all 0.5s cubic-bezier(0.4, 0, 0.2, 1);
+            position: relative;
+            z-index: 1;
+            transform-style: preserve-3d;
+            border: 2px solid #ffffff;
+        }
+        .data-circle::before {
+            content: '';
+            position: absolute;
+            inset: -2px;
+            background: linear-gradient(45deg, #60a5fa, #3b82f6);
+            border-radius: 50%;
+            z-index: -1;
+            opacity: 0;
+            transition: opacity 0.3s ease;
+        }
+        .data-circle:hover {
+            transform: translateY(-10px) scale(1.1) rotateX(10deg);
+            box-shadow: 0 15px 30px rgba(0, 0, 0, 0.2);
+        }
+        .data-circle:hover::before {
+            opacity: 1;
+        }
+        .chain-link {
+            position: relative;
+            background: linear-gradient(90deg, #4B5563, #6B7280);
+            height: 2px;
+            margin-top: 10px;
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+            transform-origin: left center;
+        }
+        .chain-link::before {
+            content: '';
+            position: absolute;
+            top: -4px;
+            left: 0;
+            width: 100%;
+            height: 10px;
+            background: linear-gradient(90deg, transparent, rgba(255,255,255,0.3), transparent);
+            animation: shine 2s infinite;
+        }
+        .chain-link::after {
+            content: '';
+            position: absolute;
+            right: -6px;
+            top: 50%;
+            transform: translateY(-50%);
+            width: 0;
+            height: 0;
+            border-left: 6px solid #4B5563;
+            border-top: 3px solid transparent;
+            border-bottom: 3px solid transparent;
+        }
+        @keyframes float {
+            0% { transform: translateY(0px) rotate(0deg); }
+            50% { transform: translateY(-15px) rotate(2deg); }
+            100% { transform: translateY(0px) rotate(0deg); }
+        }
+        @keyframes shine {
+            0% { transform: translateX(-100%); }
+            100% { transform: translateX(100%); }
+        }
+        @keyframes pulse {
+            0% { transform: scale(1); }
+            50% { transform: scale(1.05); }
+            100% { transform: scale(1); }
+        }
+        @keyframes glow {
+            0% { box-shadow: 0 0 20px rgba(52, 211, 153, 0.6); }
+            50% { box-shadow: 0 0 30px rgba(52, 211, 153, 0.8); }
+            100% { box-shadow: 0 0 20px rgba(52, 211, 153, 0.6); }
+        }
+        @keyframes bounce {
+            0% { transform: translateY(0); }
+            100% { transform: translateY(-5px); }
+        }
+        @keyframes compareJump {
+            0% { transform: translateY(0); }
+            20% { transform: translateY(-30px); }
+            80% { transform: translateY(-30px); }
+            100% { transform: translateY(0); }
+        }
+        .comparison-text {
+            position: absolute;
+            top: -70px;
+            left: 50%;
+            transform: translateX(-50%);
+            background: rgba(255, 255, 255, 0.95);
+            padding: 10px 15px;
+            border-radius: 10px;
+            font-size: 16px;
+            font-weight: bold;
+            color: #1f2937;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+            z-index: 10;
+            white-space: nowrap;
+            border: 2px solid #3b82f6;
+            animation: fadeIn 0.3s ease-in-out;
+            min-width: 200px;
+            text-align: center;
+        }
+        .comparison-arrow {
+            position: absolute;
+            top: -40px;
+            left: 50%;
+            transform: translateX(-50%);
+            width: 0;
+            height: 0;
+            border-left: 10px solid transparent;
+            border-right: 10px solid transparent;
+            border-bottom: 15px solid #3b82f6;
+        }
+        .algorithm-step {
+            position: absolute;
+            top: -100px;
+            left: 50%;
+            transform: translateX(-50%);
+            background: rgba(255, 255, 255, 0.95);
+            padding: 10px 15px;
+            border-radius: 10px;
+            font-size: 14px;
+            color: #1f2937;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+            z-index: 10;
+            white-space: nowrap;
+            border: 2px solid #10b981;
+            animation: fadeIn 0.3s ease-in-out;
+            min-width: 300px;
+            text-align: center;
+        }
+        .visual-guide {
+            position: absolute;
+            top: -120px;
+            left: 50%;
+            transform: translateX(-50%);
+            background: rgba(255, 255, 255, 0.95);
+            padding: 10px 15px;
+            border-radius: 10px;
+            font-size: 14px;
+            color: #1f2937;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+            z-index: 10;
+            white-space: nowrap;
+            border: 2px solid #f59e0b;
+            animation: fadeIn 0.3s ease-in-out;
+            min-width: 300px;
+            text-align: center;
+        }
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(-10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+        .comparison-container {
+            position: relative;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 20px;
+        }
+        .comparison-arrow {
+            width: 0;
+            height: 0;
+            border-left: 8px solid #4B5563;
+            border-top: 4px solid transparent;
+            border-bottom: 4px solid transparent;
+            margin: 0 10px;
+        }
+        .floating {
+            animation: float 4s ease-in-out infinite;
+        }
+        .particle {
+            position: absolute;
+            width: 4px;
+            height: 4px;
+            background: white;
+            border-radius: 50%;
+            opacity: 0;
+            animation: particle 1s ease-out forwards;
+        }
+        @keyframes particle {
+            0% {
+                transform: translate(0, 0);
+                opacity: 1;
+            }
+            100% {
+                transform: translate(var(--tx), var(--ty));
+                opacity: 0;
+            }
+        }
+        .pivot {
+            background: linear-gradient(135deg, #8b5cf6, #7c3aed);
+            box-shadow: 0 0 20px rgba(139, 92, 246, 0.6);
+            animation: pivotGlow 2s infinite;
+            border: 2px solid #7c3aed;
+            transform: scale(1.1);
+        }
+        @keyframes pivotGlow {
+            0% { box-shadow: 0 0 20px rgba(139, 92, 246, 0.6); }
+            50% { box-shadow: 0 0 30px rgba(139, 92, 246, 0.8); }
+            100% { box-shadow: 0 0 20px rgba(139, 92, 246, 0.6); }
+        }
+        .partition-left {
+            background: linear-gradient(135deg, #fbbf24, #f59e0b);
+            box-shadow: 0 0 20px rgba(251, 191, 36, 0.6);
+            border: 2px solid #f59e0b;
+        }
+        .partition-right {
+            background: linear-gradient(135deg, #60a5fa, #3b82f6);
+            box-shadow: 0 0 20px rgba(96, 165, 250, 0.6);
+            border: 2px solid #3b82f6;
+        }
+        @keyframes sortedGlow {
+            0% { 
+                box-shadow: 0 0 20px rgba(16, 185, 129, 0.6);
+                transform: scale(1);
+            }
+            50% { 
+                box-shadow: 0 0 30px rgba(16, 185, 129, 0.8);
+                transform: scale(1.05);
+            }
+            100% { 
+                box-shadow: 0 0 20px rgba(16, 185, 129, 0.6);
+                transform: scale(1);
+            }
+        }
+    </style>
+</head>
+<body class="bg-gray-100 min-h-screen">
+    <div class="container mx-auto px-4 py-8">
+        <h1 class="text-4xl font-bold text-center mb-8">Sorting Algorithm Visualizations</h1>
+        
+        <!-- Controls -->
+        <div class="bg-white rounded-lg shadow-md p-6 mb-8">
+            <div class="flex flex-wrap gap-4 items-center justify-center mb-6">
+                <div class="flex items-center gap-2">
+                    <label class="text-gray-700">Array Size:</label>
+                    <input type="range" id="arraySize" min="5" max="20" value="10" class="w-32">
+                    <span id="arraySizeValue" class="text-gray-700">10</span>
+                </div>
+                <div class="flex items-center gap-2">
+                    <label class="text-gray-700">Speed:</label>
+                    <input type="range" id="speed" min="100" max="1000" value="500" class="w-32">
+                    <span id="speedValue" class="text-gray-700">500ms</span>
+                </div>
+                <button id="generateArray" class="bg-blue-500 text-white px-4 py-2 rounded hover:bg-blue-600">
+                    Generate New Array
+                </button>
+            </div>
+            <div class="flex flex-wrap gap-4 justify-center">
+                <button id="bubbleSort" class="bg-green-500 text-white px-4 py-2 rounded hover:bg-green-600">
+                    Bubble Sort
+                </button>
+                <button id="selectionSort" class="bg-green-500 text-white px-4 py-2 rounded hover:bg-green-600">
+                    Selection Sort
+                </button>
+                <button id="insertionSort" class="bg-green-500 text-white px-4 py-2 rounded hover:bg-green-600">
+                    Insertion Sort
+                </button>
+                <button id="shellSort" class="bg-green-500 text-white px-4 py-2 rounded hover:bg-green-600">
+                    Shell Sort
+                </button>
+                <button id="mergeSort" class="bg-green-500 text-white px-4 py-2 rounded hover:bg-green-600">
+                    Merge Sort
+                </button>
+                <button id="quickSort" class="bg-green-500 text-white px-4 py-2 rounded hover:bg-green-600">
+                    Quick Sort
+                </button>
+                <button id="radixSort" class="bg-green-500 text-white px-4 py-2 rounded hover:bg-green-600">
+                    Radix Sort
+                </button>
+            </div>
+        </div>
+
+        <!-- Visualization Area -->
+        <div class="bg-white rounded-lg shadow-md p-6">
+            <div id="visualization" class="flex items-center justify-center min-h-[400px] relative">
+                <!-- Array elements will be dynamically added here -->
+            </div>
+        </div>
+
+        <!-- Tracing Panel -->
+        <div class="bg-white rounded-lg shadow-md p-6 mt-8">
+            <h2 class="text-2xl font-semibold mb-4">Tracing Steps</h2>
+            <div class="flex gap-4">
+                <div class="w-1/3">
+                    <h3 class="text-lg font-medium mb-2">Current Operation</h3>
+                    <div id="currentOperation" class="bg-gray-50 p-4 rounded-lg min-h-[100px]">
+                        <p class="text-gray-700">Select an algorithm to start tracing...</p>
+                    </div>
+                </div>
+                <div class="w-1/3">
+                    <h3 class="text-lg font-medium mb-2">Array State</h3>
+                    <div id="arrayState" class="bg-gray-50 p-4 rounded-lg min-h-[100px]">
+                        <p class="text-gray-700">Initial array will be displayed here...</p>
+                    </div>
+                </div>
+                <div class="w-1/3">
+                    <h3 class="text-lg font-medium mb-2">Pass Output</h3>
+                    <div id="passOutput" class="bg-gray-50 p-4 rounded-lg min-h-[100px] overflow-y-auto max-h-[200px]">
+                        <p class="text-gray-700">Pass outputs will be displayed here...</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Algorithm Description -->
+        <div class="bg-white rounded-lg shadow-md p-6 mt-8">
+            <h2 class="text-2xl font-semibold mb-4" id="algorithmName">Select an Algorithm</h2>
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                <div class="space-y-4">
+                    <h3 class="text-lg font-medium text-gray-800">Algorithm Explanation</h3>
+                    <p class="text-gray-700" id="algorithmDescription">
+                        Choose a sorting algorithm from the buttons above to see its visualization and description.
+                    </p>
+                    <div id="algorithmCode" class="bg-gray-800 text-gray-100 p-4 rounded-lg overflow-x-auto">
+                        <pre class="text-sm"><code>// Code will be displayed here</code></pre>
+                    </div>
+                </div>
+                <div class="space-y-4">
+                    <h3 class="text-lg font-medium text-gray-800">Key Concepts</h3>
+                    <ul id="keyConcepts" class="list-disc list-inside text-gray-700 space-y-2">
+                        <li>Select an algorithm to see its key concepts</li>
+                    </ul>
+                    <h3 class="text-lg font-medium text-gray-800">Time Complexity</h3>
+                    <div id="timeComplexity" class="text-gray-700">
+                        <p>Select an algorithm to see its time complexity</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // DOM Elements
+        const visualization = document.getElementById('visualization');
+        const arraySizeInput = document.getElementById('arraySize');
+        const arraySizeValue = document.getElementById('arraySizeValue');
+        const speedInput = document.getElementById('speed');
+        const speedValue = document.getElementById('speedValue');
+        const generateArrayBtn = document.getElementById('generateArray');
+        const algorithmName = document.getElementById('algorithmName');
+        const algorithmDescription = document.getElementById('algorithmDescription');
+
+        // State
+        let array = [];
+        let isSorting = false;
+        let currentSpeed = 500;
+
+        // Event Listeners
+        arraySizeInput.addEventListener('input', (e) => {
+            arraySizeValue.textContent = e.target.value;
+            generateNewArray();
+        });
+
+        speedInput.addEventListener('input', (e) => {
+            currentSpeed = 1100 - e.target.value;
+            speedValue.textContent = `${currentSpeed}ms`;
+        });
+
+        generateArrayBtn.addEventListener('click', generateNewArray);
+
+        // Algorithm buttons
+        document.getElementById('bubbleSort').addEventListener('click', () => startSorting('bubble'));
+        document.getElementById('selectionSort').addEventListener('click', () => startSorting('selection'));
+        document.getElementById('insertionSort').addEventListener('click', () => startSorting('insertion'));
+        document.getElementById('shellSort').addEventListener('click', () => startSorting('shell'));
+        document.getElementById('mergeSort').addEventListener('click', () => startSorting('merge'));
+        document.getElementById('quickSort').addEventListener('click', () => startSorting('quick'));
+        document.getElementById('radixSort').addEventListener('click', () => startSorting('radix'));
+
+        // Functions
+        function generateNewArray() {
+            if (isSorting) return;
+            array = [];
+            const size = parseInt(arraySizeInput.value);
+            for (let i = 0; i < size; i++) {
+                array.push(Math.floor(Math.random() * 100) + 1);
+            }
+            renderArray();
+        }
+
+        function renderArray() {
+            visualization.innerHTML = '';
+            const maxHeight = 300;
+            const spacing = 80;
+            
+            array.forEach((value, index) => {
+                const element = document.createElement('div');
+                element.className = 'array-element absolute flex flex-col items-center floating';
+                element.style.left = `${index * spacing}px`;
+                element.style.bottom = '0';
+                element.style.transition = 'all 0.5s cubic-bezier(0.4, 0, 0.2, 1)';
+                
+                // Value circle with enhanced styling
+                const circle = document.createElement('div');
+                circle.className = 'data-circle w-16 h-16 rounded-full text-white flex items-center justify-center text-lg font-bold transform hover:scale-110 transition-all duration-300';
+                circle.textContent = value;
+                element.appendChild(circle);
+                
+                // Index label
+                const indexLabel = document.createElement('div');
+                indexLabel.className = 'text-sm text-gray-600 mt-2';
+                indexLabel.textContent = `Index ${index}`;
+                element.appendChild(indexLabel);
+                
+                // Enhanced chain link with adjusted width
+                if (index < array.length - 1) {
+                    const chain = document.createElement('div');
+                    chain.className = 'chain-link w-18 transform hover:scale-x-150 transition-transform duration-300';
+                    element.appendChild(chain);
+                }
+                
+                visualization.appendChild(element);
+            });
+        }
+
+        function sleep(ms) {
+            return new Promise(resolve => setTimeout(resolve, ms));
+        }
+
+        async function startSorting(algorithm) {
+            if (isSorting) return;
+            isSorting = true;
+            
+            // Update educational content based on selected algorithm
+            updateEducationalContent(algorithm);
+            
+            switch (algorithm) {
+                case 'bubble':
+                    await bubbleSort();
+                    break;
+                case 'selection':
+                    await selectionSort();
+                    break;
+                case 'insertion':
+                    await insertionSort();
+                    break;
+                case 'shell':
+                    await shellSort();
+                    break;
+                case 'merge':
+                    await mergeSort();
+                    break;
+                case 'quick':
+                    await quickSort();
+                    break;
+                case 'radix':
+                    await radixSort();
+                    break;
+            }
+            
+            isSorting = false;
+        }
+
+        function updateEducationalContent(algorithm) {
+            const algorithmCode = document.getElementById('algorithmCode');
+            const keyConcepts = document.getElementById('keyConcepts');
+            const timeComplexity = document.getElementById('timeComplexity');
+            
+            switch (algorithm) {
+                case 'bubble':
+                    algorithmName.textContent = 'Bubble Sort';
+                    algorithmDescription.textContent = 'Bubble Sort repeatedly steps through the list, compares adjacent elements and swaps them if they are in the wrong order. The algorithm gets its name from the way smaller elements "bubble" to the top of the list.';
+                    algorithmCode.innerHTML = `
+                        <pre class="text-sm"><code>function bubbleSort(array) {
+    for (let i = 0; i < array.length; i++) {
+        for (let j = 0; j < array.length - i - 1; j++) {
+            if (array[j] > array[j + 1]) {
+                // Swap elements
+                [array[j], array[j + 1]] = [array[j + 1], array[j]];
+            }
+        }
+    }
+}</code></pre>`;
+                    keyConcepts.innerHTML = `
+                        <li>Compares adjacent elements</li>
+                        <li>Swaps elements if they are in wrong order</li>
+                        <li>After each pass, largest element is in correct position</li>
+                        <li>Simple to understand and implement</li>
+                    `;
+                    timeComplexity.innerHTML = `
+                        <p>Best Case: O(n) - When array is already sorted</p>
+                        <p>Average Case: O(n²) - When array is randomly ordered</p>
+                        <p>Worst Case: O(n²) - When array is reverse sorted</p>
+                    `;
+                    break;
+                    
+                case 'selection':
+                    algorithmName.textContent = 'Selection Sort';
+                    algorithmDescription.textContent = 'Selection Sort divides the input list into two parts: a sorted sublist and an unsorted sublist. It repeatedly finds the minimum element from the unsorted part and moves it to the sorted part.';
+                    algorithmCode.innerHTML = `
+                        <pre class="text-sm"><code>function selectionSort(array) {
+    for (let i = 0; i < array.length - 1; i++) {
+        let minIndex = i;
+        for (let j = i + 1; j < array.length; j++) {
+            if (array[j] < array[minIndex]) {
+                minIndex = j;
+            }
+        }
+        // Swap with minimum element
+        [array[i], array[minIndex]] = [array[minIndex], array[i]];
+    }
+}</code></pre>`;
+                    keyConcepts.innerHTML = `
+                        <li>Divides array into sorted and unsorted parts</li>
+                        <li>Finds minimum element in unsorted part</li>
+                        <li>Swaps minimum element with first unsorted element</li>
+                        <li>In-place sorting algorithm</li>
+                    `;
+                    timeComplexity.innerHTML = `
+                        <p>Best Case: O(n²) - Same as worst case</p>
+                        <p>Average Case: O(n²)</p>
+                        <p>Worst Case: O(n²)</p>
+                    `;
+                    break;
+                    
+                case 'insertion':
+                    algorithmName.textContent = 'Insertion Sort';
+                    algorithmDescription.textContent = 'Insertion Sort builds the final sorted array one item at a time. It takes each element from the input and inserts it into its correct position in the sorted part of the array.';
+                    algorithmCode.innerHTML = `
+                        <pre class="text-sm"><code>function insertionSort(array) {
+    for (let i = 1; i < array.length; i++) {
+        let key = array[i];
+        let j = i - 1;
+        
+        while (j >= 0 && array[j] > key) {
+            array[j + 1] = array[j];
+            j--;
+        }
+        array[j + 1] = key;
+    }
+}</code></pre>`;
+                    keyConcepts.innerHTML = `
+                        <li>Builds sorted array one element at a time</li>
+                        <li>Efficient for small datasets</li>
+                        <li>Stable sorting algorithm</li>
+                        <li>Good for nearly sorted arrays</li>
+                    `;
+                    timeComplexity.innerHTML = `
+                        <p>Best Case: O(n) - When array is already sorted</p>
+                        <p>Average Case: O(n²)</p>
+                        <p>Worst Case: O(n²) - When array is reverse sorted</p>
+                    `;
+                    break;
+                    
+                case 'shell':
+                    algorithmName.textContent = 'Shell Sort';
+                    algorithmDescription.textContent = 'Shell Sort is a generalization of Insertion Sort that allows the exchange of items that are far apart. It starts by sorting pairs of elements far apart from each other, then progressively reducing the gap between elements to be compared.';
+                    algorithmCode.innerHTML = `
+                        <pre class="text-sm"><code>function shellSort(array) {
+    let n = array.length;
+    for (let gap = Math.floor(n/2); gap > 0; gap = Math.floor(gap/2)) {
+        for (let i = gap; i < n; i++) {
+            let temp = array[i];
+            let j;
+            for (j = i; j >= gap && array[j - gap] > temp; j -= gap) {
+                array[j] = array[j - gap];
+            }
+            array[j] = temp;
+        }
+    }
+}</code></pre>`;
+                    keyConcepts.innerHTML = `
+                        <li>Generalization of Insertion Sort</li>
+                        <li>Uses gap sequence to sort elements</li>
+                        <li>More efficient than Insertion Sort</li>
+                        <li>In-place sorting algorithm</li>
+                    `;
+                    timeComplexity.innerHTML = `
+                        <p>Best Case: O(n log n)</p>
+                        <p>Average Case: O(n log² n)</p>
+                        <p>Worst Case: O(n²)</p>
+                    `;
+                    break;
+                    
+                case 'merge':
+                    algorithmName.textContent = 'Merge Sort';
+                    algorithmDescription.textContent = 'Merge Sort is a divide-and-conquer algorithm that divides the input array into two halves, recursively sorts them, and then merges the sorted halves.';
+                    algorithmCode.innerHTML = `
+                        <pre class="text-sm"><code>function mergeSort(array) {
+    if (array.length <= 1) return array;
+    
+    const mid = Math.floor(array.length / 2);
+    const left = mergeSort(array.slice(0, mid));
+    const right = mergeSort(array.slice(mid));
+    
+    return merge(left, right);
+}
+
+function merge(left, right) {
+    let result = [];
+    let i = 0, j = 0;
+    
+    while (i < left.length && j < right.length) {
+        if (left[i] < right[j]) {
+            result.push(left[i++]);
+        } else {
+            result.push(right[j++]);
+        }
+    }
+    
+    return result.concat(left.slice(i)).concat(right.slice(j));
+}</code></pre>`;
+                    keyConcepts.innerHTML = `
+                        <li>Divide and conquer approach</li>
+                        <li>Recursively divides array into halves</li>
+                        <li>Merges sorted subarrays</li>
+                        <li>Stable sorting algorithm</li>
+                    `;
+                    timeComplexity.innerHTML = `
+                        <p>Best Case: O(n log n)</p>
+                        <p>Average Case: O(n log n)</p>
+                        <p>Worst Case: O(n log n)</p>
+                    `;
+                    break;
+                    
+                case 'quick':
+                    algorithmName.textContent = 'Quick Sort';
+                    algorithmDescription.textContent = 'Quick Sort is a divide-and-conquer algorithm that selects a pivot element and partitions the array around the pivot, placing smaller elements before it and larger elements after it.';
+                    algorithmCode.innerHTML = `
+                        <pre class="text-sm"><code>function quickSort(array, low = 0, high = array.length - 1) {
+    if (low < high) {
+        const pi = partition(array, low, high);
+        quickSort(array, low, pi - 1);
+        quickSort(array, pi + 1, high);
+    }
+}
+
+function partition(array, low, high) {
+    const pivot = array[high];
+    let i = low - 1;
+    
+    for (let j = low; j < high; j++) {
+        if (array[j] < pivot) {
+            i++;
+            [array[i], array[j]] = [array[j], array[i]];
+        }
+    }
+    [array[i + 1], array[high]] = [array[high], array[i + 1]];
+    return i + 1;
+}</code></pre>`;
+                    keyConcepts.innerHTML = `
+                        <li>Divide and conquer approach</li>
+                        <li>Selects a pivot element</li>
+                        <li>Partitions array around pivot</li>
+                        <li>Recursively sorts subarrays</li>
+                    `;
+                    timeComplexity.innerHTML = `
+                        <p>Best Case: O(n log n) - When pivot divides array evenly</p>
+                        <p>Average Case: O(n log n)</p>
+                        <p>Worst Case: O(n²) - When pivot is smallest or largest element</p>
+                    `;
+                    break;
+                    
+                case 'radix':
+                    algorithmName.textContent = 'Radix Sort';
+                    algorithmDescription.textContent = 'Radix Sort is a non-comparative sorting algorithm that sorts data with integer keys by grouping keys by the individual digits which share the same significant position and value.';
+                    algorithmCode.innerHTML = `
+                        <pre class="text-sm"><code>function radixSort(array) {
+    const max = Math.max(...array);
+    let exp = 1;
+    
+    while (Math.floor(max/exp) > 0) {
+        countingSort(array, exp);
+        exp *= 10;
+    }
+}
+
+function countingSort(array, exp) {
+    let output = new Array(array.length).fill(0);
+    let count = new Array(10).fill(0);
+    
+    for (let i = 0; i < array.length; i++) {
+        count[Math.floor(array[i]/exp) % 10]++;
+    }
+    
+    for (let i = 1; i < 10; i++) {
+        count[i] += count[i - 1];
+    }
+    
+    for (let i = array.length - 1; i >= 0; i--) {
+        output[count[Math.floor(array[i]/exp) % 10] - 1] = array[i];
+        count[Math.floor(array[i]/exp) % 10]--;
+    }
+    
+    for (let i = 0; i < array.length; i++) {
+        array[i] = output[i];
+    }
+}</code></pre>`;
+                    keyConcepts.innerHTML = `
+                        <li>Non-comparative sorting algorithm</li>
+                        <li>Sorts by individual digits</li>
+                        <li>Uses counting sort as subroutine</li>
+                        <li>Stable sorting algorithm</li>
+                    `;
+                    timeComplexity.innerHTML = `
+                        <p>Best Case: O(d(n+k)) - d is number of digits, k is range</p>
+                        <p>Average Case: O(d(n+k))</p>
+                        <p>Worst Case: O(d(n+k))</p>
+                    `;
+                    break;
+            }
+        }
+
+        // Sorting Algorithms
+        async function bubbleSort() {
+            algorithmName.textContent = 'Bubble Sort';
+            algorithmDescription.textContent = 'Bubble Sort repeatedly steps through the list, compares adjacent elements and swaps them if they are in the wrong order.';
+            clearPassOutput();
+            
+            for (let i = 0; i < array.length; i++) {
+                let passSwaps = 0;
+                for (let j = 0; j < array.length - i - 1; j++) {
+                    updateTracing(`Comparing elements at positions ${j} and ${j+1}`, [...array]);
+                    
+                    const elements = visualization.children;
+                    const leftElement = elements[j].children[0];
+                    const rightElement = elements[j + 1].children[0];
+                    
+                    // Create comparison container
+                    const comparisonContainer = document.createElement('div');
+                    comparisonContainer.className = 'comparison-container absolute';
+                    comparisonContainer.style.top = '-70px';
+                    comparisonContainer.style.left = `${j * 80 + 40}px`;
+                    
+                    // Create comparison text
+                    const comparisonText = document.createElement('div');
+                    comparisonText.className = 'comparison-text';
+                    comparisonText.textContent = `${array[j]} > ${array[j + 1]} ?`;
+                    comparisonContainer.appendChild(comparisonText);
+                    
+                    visualization.appendChild(comparisonContainer);
+                    
+                    leftElement.classList.add('comparing');
+                    rightElement.classList.add('comparing');
+                    
+                    await sleep(currentSpeed * 1.5);
+                    
+                    if (array[j] > array[j + 1]) {
+                        comparisonText.textContent = `Yes! Swapping ${array[j]} and ${array[j + 1]}`;
+                        await sleep(currentSpeed);
+                        [array[j], array[j + 1]] = [array[j + 1], array[j]];
+                        renderArray();
+                        passSwaps++;
+                    } else {
+                        comparisonText.textContent = `No! Keeping order as is`;
+                        await sleep(currentSpeed);
+                    }
+                    
+                    leftElement.classList.remove('comparing');
+                    rightElement.classList.remove('comparing');
+                    comparisonContainer.remove();
+                }
+                updateTracing(`Element at position ${array.length - i - 1} is now in its final position`, [...array]);
+                visualization.children[array.length - i - 1].children[0].classList.add('sorted');
+                
+                updateTracing(null, [...array], `Pass ${i + 1}: ${passSwaps} swaps made. Array: [${array.join(', ')}]`);
+            }
+        }
+
+        async function selectionSort() {
+            algorithmName.textContent = 'Selection Sort';
+            algorithmDescription.textContent = 'Selection Sort divides the input list into two parts: a sorted sublist and an unsorted sublist. It repeatedly finds the minimum element from the unsorted part and moves it to the sorted part.';
+            clearPassOutput();
+            
+            for (let i = 0; i < array.length - 1; i++) {
+                let minIndex = i;
+                updateTracing(`Starting new pass. Current minimum is at position ${minIndex}`, [...array]);
+                
+                for (let j = i + 1; j < array.length; j++) {
+                    updateTracing(`Comparing elements at positions ${j} and ${minIndex}`, [...array]);
+                    
+                    const elements = visualization.children;
+                    const currentElement = elements[j].children[0];
+                    const minElement = elements[minIndex].children[0];
+                    
+                    // Create comparison container
+                    const comparisonContainer = document.createElement('div');
+                    comparisonContainer.className = 'comparison-container absolute';
+                    comparisonContainer.style.top = '-70px';
+                    comparisonContainer.style.left = `${Math.min(j, minIndex) * 80 + 40}px`;
+                    
+                    // Create comparison text
+                    const comparisonText = document.createElement('div');
+                    comparisonText.className = 'comparison-text';
+                    comparisonText.textContent = `${array[j]} < ${array[minIndex]} ?`;
+                    comparisonContainer.appendChild(comparisonText);
+                    
+                    visualization.appendChild(comparisonContainer);
+                    
+                    currentElement.classList.add('comparing');
+                    minElement.classList.add('comparing');
+                    
+                    await sleep(currentSpeed * 1.5);
+                    
+                    if (array[j] < array[minIndex]) {
+                        comparisonText.textContent = `Yes! New minimum found at position ${j}`;
+                        await sleep(currentSpeed);
+                        minElement.classList.remove('comparing');
+                        minIndex = j;
+                    } else {
+                        comparisonText.textContent = `No! Keeping current minimum`;
+                        await sleep(currentSpeed);
+                        currentElement.classList.remove('comparing');
+                    }
+                    
+                    comparisonContainer.remove();
+                }
+                
+                if (minIndex !== i) {
+                    updateTracing(`Swapping elements at positions ${i} and ${minIndex}`, [...array]);
+                    [array[i], array[minIndex]] = [array[minIndex], array[i]];
+                    renderArray();
+                }
+                
+                updateTracing(`Element at position ${i} is now in its final position`, [...array]);
+                visualization.children[i].children[0].classList.add('sorted');
+                
+                updateTracing(null, [...array], `Pass ${i + 1}: Minimum element ${array[i]} placed at position ${i}. Array: [${array.join(', ')}]`);
+            }
+            visualization.children[array.length - 1].children[0].classList.add('sorted');
+        }
+
+        async function insertionSort() {
+            algorithmName.textContent = 'Insertion Sort';
+            algorithmDescription.textContent = 'Insertion Sort builds the final sorted array one item at a time. It takes each element from the input and inserts it into its correct position in the sorted part of the array.';
+            clearPassOutput();
+            
+            for (let i = 1; i < array.length; i++) {
+                let key = array[i];
+                let j = i - 1;
+                updateTracing(`Starting pass ${i}. Key element is ${key}`, [...array]);
+                
+                while (j >= 0 && array[j] > key) {
+                    updateTracing(`Comparing ${array[j]} with key ${key}`, [...array]);
+                    
+                    const elements = visualization.children;
+                    const currentElement = elements[j].children[0];
+                    const keyElement = elements[j + 1].children[0];
+                    
+                    // Create comparison container
+                    const comparisonContainer = document.createElement('div');
+                    comparisonContainer.className = 'comparison-container absolute';
+                    comparisonContainer.style.top = '-70px';
+                    comparisonContainer.style.left = `${j * 80 + 40}px`;
+                    
+                    // Create comparison text
+                    const comparisonText = document.createElement('div');
+                    comparisonText.className = 'comparison-text';
+                    comparisonText.textContent = `${array[j]} > ${key} ?`;
+                    comparisonContainer.appendChild(comparisonText);
+                    
+                    visualization.appendChild(comparisonContainer);
+                    
+                    currentElement.classList.add('comparing');
+                    keyElement.classList.add('comparing');
+                    
+                    await sleep(currentSpeed * 1.5);
+                    
+                    comparisonText.textContent = `Yes! Shifting ${array[j]} to the right`;
+                    await sleep(currentSpeed);
+                    
+                    array[j + 1] = array[j];
+                    j--;
+                    
+                    renderArray();
+                    
+                    currentElement.classList.remove('comparing');
+                    keyElement.classList.remove('comparing');
+                    comparisonContainer.remove();
+                }
+                
+                array[j + 1] = key;
+                renderArray();
+                updateTracing(null, [...array], `Pass ${i} completed. Key ${key} inserted at position ${j + 1}. Array: [${array.join(', ')}]`);
+            }
+            
+            // Mark all elements as sorted
+            Array.from(visualization.children).forEach(element => {
+                element.children[0].classList.add('sorted');
+            });
+        }
+
+        async function mergeSort() {
+            algorithmName.textContent = 'Merge Sort';
+            algorithmDescription.textContent = 'Merge Sort is a divide-and-conquer algorithm that divides the input array into two halves, recursively sorts them, and then merges the sorted halves.';
+            clearPassOutput();
+            
+            await mergeSortHelper(0, array.length - 1);
+            
+            // Mark all elements as sorted
+            Array.from(visualization.children).forEach(element => {
+                element.children[0].classList.add('sorted');
+            });
+        }
+
+        async function mergeSortHelper(l, r) {
+            if (l < r) {
+                const m = Math.floor((l + r) / 2);
+                updateTracing(`Dividing array from index ${l} to ${r} at midpoint ${m}`, [...array]);
+                
+                // Visualize the division
+                const elements = visualization.children;
+                for (let i = l; i <= r; i++) {
+                    const element = elements[i].children[0];
+                    if (i <= m) {
+                        element.classList.add('highlight');
+                    } else {
+                        element.classList.add('comparing');
+                    }
+                }
+                await sleep(currentSpeed * 1.5);
+                
+                // Clear highlights before recursive calls
+                for (let i = l; i <= r; i++) {
+                    const element = elements[i].children[0];
+                    element.classList.remove('highlight', 'comparing');
+                }
+                
+                await mergeSortHelper(l, m);
+                await mergeSortHelper(m + 1, r);
+                await merge(l, m, r);
+            }
+        }
+
+        async function merge(l, m, r) {
+            updateTracing(`Merging subarrays from ${l} to ${m} and ${m+1} to ${r}`, [...array]);
+            
+            const n1 = m - l + 1;
+            const n2 = r - m;
+            
+            const L = new Array(n1);
+            const R = new Array(n2);
+            
+            // Visualize the two subarrays
+            const elements = visualization.children;
+            for (let i = 0; i < n1; i++) {
+                L[i] = array[l + i];
+                elements[l + i].children[0].classList.add('highlight');
+            }
+            for (let j = 0; j < n2; j++) {
+                R[j] = array[m + 1 + j];
+                elements[m + 1 + j].children[0].classList.add('comparing');
+            }
+            await sleep(currentSpeed * 1.5);
+            
+            let i = 0, j = 0, k = l;
+            
+            while (i < n1 && j < n2) {
+                updateTracing(`Comparing ${L[i]} from left subarray with ${R[j]} from right subarray`, [...array]);
+                
+                const leftElement = elements[l + i].children[0];
+                const rightElement = elements[m + 1 + j].children[0];
+                
+                // Create comparison container
+                const comparisonContainer = document.createElement('div');
+                comparisonContainer.className = 'comparison-container absolute';
+                comparisonContainer.style.top = '-70px';
+                comparisonContainer.style.left = `${Math.min(l + i, m + 1 + j) * 80 + 40}px`;
+                
+                // Create comparison text
+                const comparisonText = document.createElement('div');
+                comparisonText.className = 'comparison-text';
+                comparisonText.textContent = `${L[i]} <= ${R[j]} ?`;
+                comparisonContainer.appendChild(comparisonText);
+                
+                visualization.appendChild(comparisonContainer);
+                
+                leftElement.classList.add('comparing');
+                rightElement.classList.add('comparing');
+                
+                await sleep(currentSpeed * 1.5);
+                
+                if (L[i] <= R[j]) {
+                    comparisonText.textContent = `Yes! Taking ${L[i]} from left subarray`;
+                    await sleep(currentSpeed);
+                    array[k] = L[i];
+                    i++;
+                } else {
+                    comparisonText.textContent = `No! Taking ${R[j]} from right subarray`;
+                    await sleep(currentSpeed);
+                    array[k] = R[j];
+                    j++;
+                }
+                
+                renderArray();
+                
+                leftElement.classList.remove('comparing');
+                rightElement.classList.remove('comparing');
+                comparisonContainer.remove();
+                
+                k++;
+            }
+            
+            while (i < n1) {
+                array[k] = L[i];
+                i++;
+                k++;
+                renderArray();
+                await sleep(currentSpeed);
+            }
+            
+            while (j < n2) {
+                array[k] = R[j];
+                j++;
+                k++;
+                renderArray();
+                await sleep(currentSpeed);
+            }
+            
+            // Clear all highlights
+            for (let i = l; i <= r; i++) {
+                elements[i].children[0].classList.remove('highlight', 'comparing');
+            }
+            
+            updateTracing(null, [...array], `Merge completed for subarrays ${l} to ${r}. Array: [${array.join(', ')}]`);
+        }
+
+        async function quickSort() {
+            algorithmName.textContent = 'Quick Sort';
+            algorithmDescription.textContent = 'Quick Sort is a divide-and-conquer algorithm that selects a pivot element and partitions the array around the pivot, placing smaller elements before it and larger elements after it.';
+            clearPassOutput();
+            
+            await quickSortHelper(0, array.length - 1);
+            
+            // Mark all elements as sorted
+            Array.from(visualization.children).forEach(element => {
+                element.children[0].classList.add('sorted');
+            });
+        }
+
+        async function quickSortHelper(low, high) {
+            if (low < high) {
+                createVisualGuide(`Partitioning array from index ${low} to ${high}`);
+                updateTracing(`Partitioning array from index ${low} to ${high}`, [...array]);
+                
+                // Visualize the current partition
+                const elements = visualization.children;
+                for (let i = low; i <= high; i++) {
+                    elements[i].children[0].classList.add('highlight');
+                }
+                await sleep(currentSpeed * 1.5);
+                
+                const pi = await partition(low, high);
+                
+                // Clear highlights
+                for (let i = low; i <= high; i++) {
+                    elements[i].children[0].classList.remove('highlight');
+                }
+                
+                updateTracing(null, [...array], `Partition completed. Pivot ${array[pi]} placed at position ${pi}. Array: [${array.join(', ')}]`);
+                
+                // Visualize the two partitions and pivot
+                for (let i = low; i < pi; i++) {
+                    elements[i].children[0].classList.add('partition-left');
+                }
+                elements[pi].children[0].classList.add('pivot');
+                for (let i = pi + 1; i <= high; i++) {
+                    elements[i].children[0].classList.add('partition-right');
+                }
+                await sleep(currentSpeed * 1.5);
+                
+                // Clear highlights before recursive calls
+                for (let i = low; i <= high; i++) {
+                    elements[i].children[0].classList.remove('partition-left', 'partition-right', 'pivot');
+                }
+                
+                await quickSortHelper(low, pi - 1);
+                await quickSortHelper(pi + 1, high);
+            }
+        }
+
+        async function partition(low, high) {
+            const pivot = array[high];
+            let i = low - 1;
+            createVisualGuide(`Selecting pivot element ${pivot} at position ${high}`);
+            updateTracing(`Selecting pivot element ${pivot} at position ${high}`, [...array]);
+            
+            // Highlight the pivot
+            const elements = visualization.children;
+            elements[high].children[0].classList.add('pivot');
+            
+            for (let j = low; j < high; j++) {
+                updateTracing(`Comparing element ${array[j]} with pivot ${pivot}`, [...array]);
+                
+                const currentElement = elements[j].children[0];
+                const pivotElement = elements[high].children[0];
+                
+                // Create comparison container
+                const comparisonContainer = document.createElement('div');
+                comparisonContainer.className = 'comparison-container absolute';
+                comparisonContainer.style.top = '-70px';
+                comparisonContainer.style.left = `${Math.min(j, high) * 80 + 40}px`;
+                
+                // Create comparison text
+                const comparisonText = document.createElement('div');
+                comparisonText.className = 'comparison-text';
+                comparisonText.textContent = `${array[j]} < ${pivot} ?`;
+                comparisonContainer.appendChild(comparisonText);
+                
+                visualization.appendChild(comparisonContainer);
+                
+                currentElement.classList.add('comparing');
+                
+                await sleep(currentSpeed * 1.5);
+                
+                if (array[j] < pivot) {
+                    comparisonText.textContent = `Yes! Moving ${array[j]} to left of pivot`;
+                    await sleep(currentSpeed);
+                    i++;
+                    [array[i], array[j]] = [array[j], array[i]];
+                    renderArray();
+                } else {
+                    comparisonText.textContent = `No! Keeping ${array[j]} on right of pivot`;
+                    await sleep(currentSpeed);
+                }
+                
+                currentElement.classList.remove('comparing');
+                comparisonContainer.remove();
+            }
+            
+            [array[i + 1], array[high]] = [array[high], array[i + 1]];
+            renderArray();
+            
+            // Mark the pivot as sorted
+            elements[i + 1].children[0].classList.remove('pivot');
+            elements[i + 1].children[0].classList.add('sorted');
+            
+            createVisualGuide(`Pivot ${pivot} placed at final position ${i + 1}`);
+            await sleep(currentSpeed * 1.5);
+            
+            return i + 1;
+        }
+
+        async function shellSort() {
+            algorithmName.textContent = 'Shell Sort';
+            algorithmDescription.textContent = 'Shell Sort is a generalization of Insertion Sort that allows the exchange of items that are far apart. It starts by sorting pairs of elements far apart from each other, then progressively reducing the gap between elements to be compared.';
+            clearPassOutput();
+            
+            let n = array.length;
+            for (let gap = Math.floor(n/2); gap > 0; gap = Math.floor(gap/2)) {
+                updateTracing(`Starting new pass with gap ${gap}`, [...array]);
+                
+                for (let i = gap; i < n; i++) {
+                    let temp = array[i];
+                    let j;
+                    
+                    for (j = i; j >= gap && array[j - gap] > temp; j -= gap) {
+                        updateTracing(`Comparing elements at positions ${j-gap} and ${j}`, [...array]);
+                        
+                        const elements = visualization.children;
+                        const leftElement = elements[j - gap].children[0];
+                        const rightElement = elements[j].children[0];
+                        
+                        // Create comparison container
+                        const comparisonContainer = document.createElement('div');
+                        comparisonContainer.className = 'comparison-container absolute';
+                        comparisonContainer.style.top = '-70px';
+                        comparisonContainer.style.left = `${(j - gap) * 80 + 40}px`;
+                        
+                        // Create comparison text
+                        const comparisonText = document.createElement('div');
+                        comparisonText.className = 'comparison-text';
+                        comparisonText.textContent = `${array[j - gap]} > ${temp} ?`;
+                        comparisonContainer.appendChild(comparisonText);
+                        
+                        visualization.appendChild(comparisonContainer);
+                        
+                        leftElement.classList.add('comparing');
+                        rightElement.classList.add('comparing');
+                        
+                        await sleep(currentSpeed * 1.5);
+                        
+                        comparisonText.textContent = `Yes! Shifting ${array[j - gap]} to position ${j}`;
+                        await sleep(currentSpeed);
+                        
+                        array[j] = array[j - gap];
+                        renderArray();
+                        
+                        leftElement.classList.remove('comparing');
+                        rightElement.classList.remove('comparing');
+                        comparisonContainer.remove();
+                    }
+                    
+                    array[j] = temp;
+                    renderArray();
+                }
+                
+                updateTracing(null, [...array], `Pass with gap ${gap} completed. Array: [${array.join(', ')}]`);
+            }
+            
+            // Mark all elements as sorted
+            Array.from(visualization.children).forEach(element => {
+                element.children[0].classList.add('sorted');
+            });
+        }
+
+        async function radixSort() {
+            algorithmName.textContent = 'Radix Sort';
+            algorithmDescription.textContent = 'Radix Sort is a non-comparative sorting algorithm that sorts data with integer keys by grouping keys by the individual digits which share the same significant position and value.';
+            clearPassOutput();
+            
+            const max = Math.max(...array);
+            let exp = 1;
+            
+            while (Math.floor(max/exp) > 0) {
+                updateTracing(`Starting new pass with digit position ${exp}`, [...array]);
+                
+                let output = new Array(array.length).fill(0);
+                let count = new Array(10).fill(0);
+                
+                // Store count of occurrences
+                for (let i = 0; i < array.length; i++) {
+                    const digit = Math.floor(array[i]/exp) % 10;
+                    count[digit]++;
+                    
+                    const elements = visualization.children;
+                    const currentElement = elements[i].children[0];
+                    
+                    // Create comparison container
+                    const comparisonContainer = document.createElement('div');
+                    comparisonContainer.className = 'comparison-container absolute';
+                    comparisonContainer.style.top = '-70px';
+                    comparisonContainer.style.left = `${i * 80 + 40}px`;
+                    
+                    // Create comparison text
+                    const comparisonText = document.createElement('div');
+                    comparisonText.className = 'comparison-text';
+                    comparisonText.textContent = `Digit at position ${exp}: ${digit}`;
+                    comparisonContainer.appendChild(comparisonText);
+                    
+                    visualization.appendChild(comparisonContainer);
+                    
+                    currentElement.classList.add('comparing');
+                    await sleep(currentSpeed * 1.5);
+                    currentElement.classList.remove('comparing');
+                    comparisonContainer.remove();
+                }
+                
+                // Change count[i] so that it contains actual position
+                for (let i = 1; i < 10; i++) {
+                    count[i] += count[i - 1];
+                }
+                
+                // Build the output array
+                for (let i = array.length - 1; i >= 0; i--) {
+                    const digit = Math.floor(array[i]/exp) % 10;
+                    output[count[digit] - 1] = array[i];
+                    count[digit]--;
+                    
+                    const elements = visualization.children;
+                    const currentElement = elements[i].children[0];
+                    
+                    // Create comparison container
+                    const comparisonContainer = document.createElement('div');
+                    comparisonContainer.className = 'comparison-container absolute';
+                    comparisonContainer.style.top = '-70px';
+                    comparisonContainer.style.left = `${i * 80 + 40}px`;
+                    
+                    // Create comparison text
+                    const comparisonText = document.createElement('div');
+                    comparisonText.className = 'comparison-text';
+                    comparisonText.textContent = `Moving ${array[i]} to position ${count[digit]}`;
+                    comparisonContainer.appendChild(comparisonText);
+                    
+                    visualization.appendChild(comparisonContainer);
+                    
+                    currentElement.classList.add('comparing');
+                    await sleep(currentSpeed * 1.5);
+                    currentElement.classList.remove('comparing');
+                    comparisonContainer.remove();
+                }
+                
+                // Copy the output array to array[]
+                for (let i = 0; i < array.length; i++) {
+                    array[i] = output[i];
+                    renderArray();
+                    await sleep(currentSpeed);
+                }
+                
+                updateTracing(null, [...array], `Pass for digit position ${exp} completed. Array: [${array.join(', ')}]`);
+                exp *= 10;
+            }
+            
+            // Mark all elements as sorted
+            Array.from(visualization.children).forEach(element => {
+                element.children[0].classList.add('sorted');
+            });
+        }
+
+        // Add these functions to the script section
+        function updateTracing(operation, arrayState, passOutput = null) {
+            const currentOperation = document.getElementById('currentOperation');
+            const arrayStateDiv = document.getElementById('arrayState');
+            const passOutputDiv = document.getElementById('passOutput');
+            
+            if (operation) {
+                currentOperation.innerHTML = `
+                    <div class="bg-blue-50 p-4 rounded-lg border border-blue-200">
+                        <p class="text-blue-700 font-medium">${operation}</p>
+                    </div>
+                `;
+            }
+            
+            arrayStateDiv.innerHTML = `
+                <div class="flex gap-2 items-center">
+                    <div class="text-sm text-gray-600 mr-2">Current Array:</div>
+                    ${arrayState.map((value, index) => `
+                        <div class="flex flex-col items-center">
+                            <div class="w-8 h-8 rounded-full bg-blue-500 text-white flex items-center justify-center text-sm font-bold">
+                                ${value}
+                            </div>
+                            <div class="text-xs text-gray-500 mt-1">${index}</div>
+                        </div>
+                    `).join('')}
+                </div>
+            `;
+
+            if (passOutput) {
+                const passElement = document.createElement('div');
+                passElement.className = 'mb-2 p-3 bg-green-50 rounded-lg border border-green-200';
+                passElement.innerHTML = `
+                    <p class="text-sm text-green-700">${passOutput}</p>
+                `;
+                passOutputDiv.insertBefore(passElement, passOutputDiv.firstChild);
+            }
+        }
+
+        function clearPassOutput() {
+            const passOutputDiv = document.getElementById('passOutput');
+            passOutputDiv.innerHTML = '<p class="text-gray-700">Pass outputs will be displayed here...</p>';
+        }
+
+        function createParticleEffect(element) {
+            for (let i = 0; i < 8; i++) {
+                const particle = document.createElement('div');
+                particle.className = 'particle';
+                const angle = (Math.PI / 4) * i;
+                const distance = 20;
+                particle.style.setProperty('--tx', `${Math.cos(angle) * distance}px`);
+                particle.style.setProperty('--ty', `${Math.sin(angle) * distance}px`);
+                element.appendChild(particle);
+                setTimeout(() => particle.remove(), 1000);
+            }
+        }
+
+        async function swapElements(i, j) {
+            const elements = visualization.children;
+            createParticleEffect(elements[i].children[0]);
+            createParticleEffect(elements[j].children[0]);
+            
+            elements[i].children[0].classList.add('comparing');
+            elements[j].children[0].classList.add('comparing');
+            
+            await sleep(currentSpeed);
+            
+            [array[i], array[j]] = [array[j], array[i]];
+            renderArray();
+            
+            elements[i].children[0].classList.remove('comparing');
+            elements[j].children[0].classList.remove('comparing');
+        }
+
+        function createVisualGuide(text) {
+            const guide = document.createElement('div');
+            guide.className = 'visual-guide';
+            guide.textContent = text;
+            visualization.appendChild(guide);
+            setTimeout(() => guide.remove(), currentSpeed * 2);
+        }
+
+        function createAlgorithmStep(text) {
+            const step = document.createElement('div');
+            step.className = 'algorithm-step';
+            step.textContent = text;
+            visualization.appendChild(step);
+            setTimeout(() => step.remove(), currentSpeed * 2);
+        }
+
+        // Initialize
+        generateNewArray();
+    </script>
+</body>
+</html> 
